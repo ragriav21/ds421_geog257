@@ -58,7 +58,7 @@ Regarding the country time trends, we would have to do a lot more testing to act
 
 Results are included alongside the code below, and in the GitHub file that this Markdown document is associated with.
 
-On the data generation side, we were able to generate the data itself with little problem.  Credit goes to Andy for his use and editing of Stata to provide this solution.
+On the data generation side, we were able to generate the data itself with little problem.  Credit goes to Andy for his use and editing of Stata to provide this solution.  For collaboration, we uploaded the results of the Stata calculation (only one of us had easy access to Stata) and the R Markdown document we were working on onto Github, in a shared repository, along with all of the data, figures, and scripts provided by the authors.  We used the "MakeFigure2.R" script as a baseline.
 
 On the plotting side, we stumbled into some issues.  Graph scales were coded manually in such a way that in switching the dimensions from dealing with natural logs to whole numbers, we had to play around with changing the hard-coded numbers used for graph scale.  It also turned out to be the case that in "MakeFigure2.R", we could not find any code that generated the x-axis, y-axis, histogram, and country labels that are found in Figure 2 in the paper, which means that we would have to input that data ourselves.  Some attempts to this effect were made.  We were not able to manually label countries of interest as a result, however.  We had to add additional lines in the code for the other labels.
 
