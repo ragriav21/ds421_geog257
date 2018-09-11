@@ -65,10 +65,14 @@ Results are included alongside the code below, and in the GitHub file that this 
 Download necessary libraries
 
 ```{r Environment}
-
+require(maptools)
+require(fields)
+require(classInt)
+require(plotrix)
+require(dplyr)
 ```
 
-Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren
+Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren, and focusing on Model 2 (first differences) specifically
 
 ```{r .Do File Download}
 
@@ -83,16 +87,13 @@ coef <- read.csv("data/output/estimatedCoefficients_ds421_firstDiff.csv")
 ```{r Figure 2A}
 
 # SCRIPT TO MAKE FIGURE 2
-# This file calls data created in GenerateFigure2Data.do
 
 rm(list = ls())
 
-require(maptools)
-require(fields)
-require(classInt)
-require(plotrix)
-require(dplyr)
-"%&%"<-function(x,y)paste(x,y,sep="")  #define a function for easy string pasting
+#define a function for easy string pasting
+"%&%" <- function(x, y) {
+  paste(x,y,sep="")
+} 
 
 pdf(file="figures/MainFigs_Input/Figure2.pdf",width=10,height=5.5,useDingbats=F)
 
@@ -165,7 +166,7 @@ rect(bins,base-dis*(1),bins+0.5,base-dis*(1)+cts,col="grey")
 cts = gdp/max(gdp)*0.05
 rect(bins,base-dis*(2),bins+0.5,base-dis*(2)+cts,col="black")
 
-
+dev.off()
 ```
 
 ## Supplementary Material
