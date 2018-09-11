@@ -2,7 +2,7 @@
 title: "Project 2: Global Non-Linear Effect of Temperature on Economic Production"
 author: "Andy Hultgren, Chester Harvey, and Rafael Grillo Avila"
 date: "September 10, 2018"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -23,32 +23,34 @@ We were able to recreate the data using the .do files, substituting GDP levels f
 
 Three models were built, as described below.  The issues associated with Model 1 are also described, as well as the attempts to address one of those issues with Models 2 and 3.
 
-#### Model 1 (extension "_ds421_levels"):  
+#### Model 1 Format & Issues  
 
-Regresses the level of GDP on a quadratic in country temperature, instead of growth in GDP on a quadratic in country temperature. Country-specific quadratic time controls are still used, just as a default, though it is clear that a country quadratic time control in a levels model is not controlling for the same variation in GDP as the same time trend in a growth model.
+Model 1 (extension "_ds421_levels") regresses the level of GDP on a quadratic in country temperature, instead of growth in GDP on a quadratic in country temperature. Country-specific quadratic time controls are still used, just as a default, though it is clear that a country quadratic time control in a levels model is not controlling for the same variation in GDP as the same time trend in a growth model.
 
 Now, this model has many problems associated with it that I think make it a bad idea to run. The first is that economic shocks in general affect a percentage of a country's GDP rather than its level of GDP. Think of some shock (e.g. a trade war, or anything): do we think it would cause a loss of e.g. $1,500 per capita whether you live in China, or Brazil, or the EU, or the US? No. Rather, we typically think of a loss of GDP of e.g. 5% as something that could be comparable across these places. (And data on GDP evolution support this intuition.) Two problems then fall out of this issue:
 
-- Problem 1: GDP shocks should enter multiplicatively in the model rather than additively. i.e. the data generating process for country $i$ in time $t$ should be
+- *Problem 1:* GDP shocks should enter multiplicatively in the model rather than additively. i.e. the data generating process for country $i$ in time $t$ should be
 
-(a) $GDP_{it} = some shock_{it} \times GDP_{it-1}$
+(a) $GDP_{it} = some \thinspace shock_{it} \times GDP_{it-1}$
 
 and the data generating process should not be
 
-(b) $GDP_{it} = some_shock_{it} + GDP_{it-1}$
+(b) $GDP_{it} = some \thinspace shock_{it} + GDP_{it-1}$
 
 However model (b) is the model that is assumed when doing a levels regression. If you want to assume model (a), which I believe is the correct option, then you have to use the log model that the original authors use.
 
-- Problem 2: Both models (a) and (b) above imply persistence of past shocks into the future. This introduces statistical concerns in the estimation process that also make a simple levels model (Model 1 above) a bad idea to run.
+- *Problem 2:* Both models (a) and (b) above imply persistence of past shocks into the future. This introduces statistical concerns in the estimation process that also make a simple levels model (Model 1 above) a bad idea to run.
 
 
 #### What do do about all this:
+
 Both of these issues (Problem 1 and Problem 2) would, I think, be typical justifications for running a growth regression as the original authors did (and as Dell Jones and Olken did as well), and not a simple levels regression. But, we want to test the levels regression, so we are stuck with Problem 1.  For Problem 2, however, we can try first differencing to attempt to cancel out the persistent, past shocks. The next model does this:
 
-- Model 2 (extension "_ds421_firstDiff"):  This model assumes data generating process (b) above, but takes first differences. Effectively:  $GDP_{it} - GDP_{it-1} = some shock_{it} - some shock_{it-1}$.  Importantly (for statistical purposes), GDP_it-1 is no longer on the right hand side of the regression model. We could run a battery of tests to ensure that first differencing fixes the persistent shock problem, but that would be too much work for this assignment.
+- Model 2 (extension "_ds421_firstDiff"):  This model assumes data generating process (b) above, but takes first differences. Effectively:  $GDP_{it} - GDP_{it-1} = some \thinspace shock_{it} - some \thinspace shock_{it-1}$.  Importantly (for statistical purposes), $GDP_{it-1}$ is no longer on the right hand side of the regression model. We could run a battery of tests to ensure that first differencing fixes the persistent shock problem, but that would be too much work for this assignment.
+
 One other note for this model: here the time controls are country fixed effect and a linear country time trend. In a first differences model, this is essentially similar to modeling a quadratic country time trend for the level (non-differenced) model. So, I make that change for consistency with Model 1 above.
 
--- Model 3 (extension "_ds421_firstDiff_quadT"):  This tests the exact same model as Model 2, but includes quadratic country time trends, just to see the sensitivity to trends. Really none of these time controls is similar to having country quadratic time controls for the growth model, so I include Model 3 for the sake of being thorough.
+- Model 3 (extension "_ds421_firstDiff_quadT"):  This tests the exact same model as Model 2, but includes quadratic country time trends, just to see the sensitivity to trends. Really none of these time controls is similar to having country quadratic time controls for the growth model, so I include Model 3 for the sake of being thorough.
 
 Regarding the country time trends, we would have to do a lot more testing to actually determine what time controls are best given the data, and that is outside the scope of this assignment. Also, it might be futile given Problem 1 anyway.
 
