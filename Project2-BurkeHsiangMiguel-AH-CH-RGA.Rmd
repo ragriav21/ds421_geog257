@@ -106,11 +106,6 @@ par(mar=c(4,4,2,1))
 #  Panel A
 ########################################################
 
-resp <- read.csv("data/output/estimatedGlobalResponse.csv")
-dta <- read.csv("data/output/mainDataset.csv")
-smpl <- is.na(dta$growthWDI)==F & is.na(dta$UDel_temp_popweight)==F   #main estimation sample
-coef <- read.csv("data/output/estimatedCoefficients.csv")
-
 # center response at optimum
 x = resp$x
 mx = max(resp$estimate)
