@@ -17,7 +17,7 @@ The objective of our assignment was to recreate Figure 2, Panel A of Burke, Hsia
 
 Instead of plotting the change in log GDP (roughly measuring the change in growth rates of GDP), we wanted to measure the changes in GDP levels.
 
-### Progress & Stumbling Blocks
+### Plan of Action and Theoretical Progress & Stumbling Blocks
 
 We were able to recreate the data using the .do files, substituting GDP levels for log-GDP (reflecting growth rate of GDP).  
 
@@ -44,19 +44,29 @@ However model (b) is the model that is assumed when doing a levels regression. I
 
 #### What do do about all this:
 
-Both of these issues (Problem 1 and Problem 2) would, I think, be typical justifications for running a growth regression as the original authors did (and as Dell Jones and Olken did as well), and not a simple levels regression. But, we want to test the levels regression, so we are stuck with Problem 1.  For Problem 2, however, we can try first differencing to attempt to cancel out the persistent, past shocks. The next model does this:
+Both of these issues (Problem 1 and Problem 2) would  be typical justifications for running a growth regression as the original authors did (and as Dell Jones and Olken did as well), and not a simple levels regression. But, we want to test the levels regression, so we are stuck with Problem 1.  For Problem 2, however, we can try first differencing to attempt to cancel out the persistent, past shocks. The next model does this:
 
 - Model 2 (extension "_ds421_firstDiff"):  This model assumes data generating process (b) above, but takes first differences. Effectively:  $GDP_{it} - GDP_{it-1} = some \thinspace shock_{it} - some \thinspace shock_{it-1}$.  Importantly (for statistical purposes), $GDP_{it-1}$ is no longer on the right hand side of the regression model. We could run a battery of tests to ensure that first differencing fixes the persistent shock problem, but that would be too much work for this assignment.
 
-One other note for this model: here the time controls are country fixed effect and a linear country time trend. In a first differences model, this is essentially similar to modeling a quadratic country time trend for the level (non-differenced) model. So, I make that change for consistency with Model 1 above.
+One other note for this model: here the time controls are country fixed effect and a linear country time trend. In a first differences model, this is essentially similar to modeling a quadratic country time trend for the level (non-differenced) model. So, we make that change for consistency with Model 1 above.
 
-- Model 3 (extension "_ds421_firstDiff_quadT"):  This tests the exact same model as Model 2, but includes quadratic country time trends, just to see the sensitivity to trends. Really none of these time controls is similar to having country quadratic time controls for the growth model, so I include Model 3 for the sake of being thorough.
+- Model 3 (extension "_ds421_firstDiff_quadT"):  This tests the exact same model as Model 2, but includes quadratic country time trends, just to see the sensitivity to trends. Really none of these time controls is similar to having country quadratic time controls for the growth model, so Model 3 is included for the sake of being thorough.
 
 Regarding the country time trends, we would have to do a lot more testing to actually determine what time controls are best given the data, and that is outside the scope of this assignment. Also, it might be futile given Problem 1 anyway.
 
-### Results
+### Results and Implementation Progress & Stumbling Blocks
 
 Results are included alongside the code below, and in the GitHub file that this Markdown document is associated with.
+
+On the data generation side, we were able to generate the data itself with little problem.  Credit goes to Andy for his use and editing of Stata to provide this solution.
+
+On the plotting side, we stumbled into some issues.  Graph scales were coded manually in such a way that in switching the dimensions from dealing with natural logs to whole numbers, we had to play around with changing the hard-coded numbers used for graph scale.  It also turned out to be the case that in "MakeFigure2.R", we could not find any code that generated the x-axis, y-axis, histogram, and country labels that are found in Figure 2 in the paper, which means that we would have to input that data ourselves.  Some attempts to this effect were made.  We were not able to manually label countries of interest as a result, however.  We had to add additional lines in the code for the other labels.
+
+The use of base R plotting code (instead of, for example, ggplot2 combined with tidyverse) also made it difficult to parse what was going on and, for instance, we were unable to get the histograms to display to a satisfactory degree partially because of non-intuitive base R code.  Though the documentation is certainly very thorough, and the Readme that walked one through the different functions that would have to be run to replicate the data, the amount of work that went into both the original experiment and the documentation implies that we would not be able to do replication justice in a span of even  one full day, and much less 3-4 hours.  This highlights the importance of giving greater weight to replication exercises, as the due that replication and making replicable studies is given is not commensurate with the amount of work that goes into making studies replicable or replicating them. 
+
+Back to the results: the graph shows that with increasing temperature, the impact from higher levels of temperature on GDP remains about average and starts to decrease.  Since, as implied above, using levels creates an additive model and doesn't account for the persistence of past shocks, and a first-order difference may not be a significant enough of a time lag, we might be able to interpret the graph as an example of the *marginal* impact that each additional unit increase in temperature might have on level of GDP.  Even this interpretation is tenuous at best, however.
+
+
 
 ## Code & Results
 
@@ -71,7 +81,7 @@ require(classInt)
 require(plotrix)
 require(dplyr)
 
-# Basic layout
+# Delist
 
 rm(list = ls())
 
@@ -103,7 +113,7 @@ smpl <- is.na(dta$growthWDI)==F & is.na(dta$UDel_temp_popweight)==F   #main esti
 coef <- read.csv("data/output/estimatedCoefficients.csv")
 ```
 
-Edit data
+Edit data. x, mx, est, min90, and max90 should be slightly better explained in the code names.
 
 ```{r Edit Data}
 # center response at optimum
@@ -120,6 +130,8 @@ ctt = c('US','CHN',"GER","JPN",'IND','NGA','INDO','BRA','FRA','UK')
 
 ### Plot
 
+Note that there is repetition of variables, which is not ideal practice
+
 ```{r Plot Figure 2A}
 
 pdf(file="figures/MainFigs_Input/Figure2.pdf",width=10,height=5.5,useDingbats=F)
@@ -129,12 +141,13 @@ layout(mat)
 ax = 1.5  #scaling for axes
 par(mar=c(4,4,2,1))
 #initialize plot, accounting for a change in levels for y-axis
-plot(1,xlim=c(-2,30),ylim=c(min(min90), max(max90)),type="n",las=1,cex.axis=0.9)
+plot(1,xlim=c(-2,30),ylim=c(min(min90)-4000, max(max90))-1000,type="n",las=1,cex.axis=0.9,
+     xlab = "Annual Average Temperature (C)", ylab = "Change in GDP per capita")
 
 # add vertical average temperature lines for selected countries
 for (j in 1:length(ctys)) {
   tt = mean(dta_diff$UDel_temp_popweight[dta_diff$iso==ctys[j]],na.rm=T)
-  segments(tt,-0.23,tt,0.15,lwd=0.5)
+  segments(tt,min(min90),tt,max(max90),lwd=0.5)
 }
 
 # plot CI and main effect
@@ -144,9 +157,9 @@ lines(x,est,lwd=2)
 # now add histograms at bottom
 # first calculate percent of population and global gdp produced at each temperature bin, for our estimation sample
 bins = seq(-7,30,0.5)
-histtemp = dta_diff$UDel_temp_popweight[smpl]
-histpop = dta_diff$Pop[smpl]
-histgdp = dta_diff$TotGDP[smpl]
+histtemp = dta_diff$UDel_temp_popweight[smpl_diff]
+histpop = dta_diff$Pop[smpl_diff]
+histgdp = dta_diff$TotGDP[smpl_diff]
 pop = gdp = c()
 for (j in 1:(length(bins)-1)) {
   lo = bins[j]
@@ -158,19 +171,28 @@ pop = pop/sum(pop)
 gdp = gdp/sum(gdp)
 
 #parameters that set where histograms go
-dis = 0.055
-base = -0.3
+dis = 3000
+base = min(min90) - 200
 
 # now make histograms
+
 #temperature
 zz <- hist(histtemp,plot=F,breaks=bins)
-cts = zz$counts/max(zz$counts)*0.05  #sets the height of the tallest bar to 0.05
+cts = zz$counts/max(zz$counts)*2000  #sets the height of the tallest bar to 2000
+text(x = 8, y = max(base+cts), 
+     labels = "Global distribution of temperature observations") # Added
 rect(bins,base,bins+0.5,base+cts,col="red")
+
 # pop
-cts = pop/max(pop)*0.05
+cts = pop/max(pop)*2000
+text(x = 5, y = max(base-dis*(1)+cts), 
+     labels = "Global distribution of population") # Added
 rect(bins,base-dis*(1),bins+0.5,base-dis*(1)+cts,col="grey")
+
 # gdp
-cts = gdp/max(gdp)*0.05
+cts = gdp/max(gdp)*2000
+text(x = 4, y = max(base-dis*(2)+cts), 
+     labels = "Global distribution of GDP") # Added
 rect(bins,base-dis*(2),bins+0.5,base-dis*(2)+cts,col="black")
 
 dev.off()
