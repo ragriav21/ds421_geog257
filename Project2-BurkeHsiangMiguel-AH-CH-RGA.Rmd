@@ -80,19 +80,13 @@ rm(list = ls())
   paste(x,y,sep="")
 } 
 
-pdf(file="figures/MainFigs_Input/Figure2.pdf",width=10,height=5.5,useDingbats=F)
-
-mat <- matrix(c(1,1,2,3,1,1,4,5),nrow=2,byrow=T)
-layout(mat)
-ax = 1.5  #scaling for axes
-par(mar=c(4,4,2,1))
 ```
 
 ### Get Figure 2A Data
 
 Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren, and focusing on Model 2 (first differences) specifically.
 
-```{r Download Figure 2A Data}
+```{r Figure 2A Data}
 
 # Model 2 Data
 
@@ -108,6 +102,7 @@ dta <- read.csv("data/output/mainDataset.csv")
 smpl <- is.na(dta$growthWDI)==F & is.na(dta$UDel_temp_popweight)==F   #main estimation sample
 coef <- read.csv("data/output/estimatedCoefficients.csv")
 ```
+
 Edit data
 
 ```{r Edit Data}
@@ -123,7 +118,16 @@ ctys = c('USA','CHN','DEU','JPN','IND','NGA','IDN','BRA','FRA','GBR')
 ctt = c('US','CHN',"GER","JPN",'IND','NGA','INDO','BRA','FRA','UK')
 ``` 
 
+### Plot
+
 ```{r Plot Figure 2A}
+
+pdf(file="figures/MainFigs_Input/Figure2.pdf",width=10,height=5.5,useDingbats=F)
+
+mat <- matrix(c(1,1,2,3,1,1,4,5),nrow=2,byrow=T)
+layout(mat)
+ax = 1.5  #scaling for axes
+par(mar=c(4,4,2,1))
 #initialize plot, accounting for a change in levels for y-axis
 plot(1,xlim=c(-2,30),ylim=c(min(min90), max(max90)),type="n",las=1,cex.axis=0.9)
 
