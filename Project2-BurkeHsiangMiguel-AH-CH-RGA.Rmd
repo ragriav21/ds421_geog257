@@ -62,7 +62,7 @@ Results are included alongside the code below, and in the GitHub file that this 
 
 ### Setup
 
-Download necessary libraries
+Download necessary libraries and set up Figure 2A frame
 
 ```{r Environment}
 require(maptools)
@@ -70,23 +70,8 @@ require(fields)
 require(classInt)
 require(plotrix)
 require(dplyr)
-```
 
-Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren, and focusing on Model 2 (first differences) specifically
-
-```{r .Do File Download}
-
-resp <- read.csv("data/output/estimatedGlobalResponse_ds421_firstDiff.csv")
-dta <- read.csv("data/output/mainDataset.csv")
-coef <- read.csv("data/output/estimatedCoefficients_ds421_firstDiff.csv")
-
-```
-
-### Make Figure 2A
-
-```{r Figure 2A}
-
-# SCRIPT TO MAKE FIGURE 2
+# Basic layout
 
 rm(list = ls())
 
@@ -101,27 +86,50 @@ mat <- matrix(c(1,1,2,3,1,1,4,5),nrow=2,byrow=T)
 layout(mat)
 ax = 1.5  #scaling for axes
 par(mar=c(4,4,2,1))
+```
 
-########################################################
-#  Panel A
-########################################################
+### Get Figure 2A Data
 
+Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren, and focusing on Model 2 (first differences) specifically.
+
+```{r Download Figure 2A Data}
+
+# Model 2 Data
+
+resp_diff <- read.csv("data/output/estimatedGlobalResponse_ds421_firstDiff.csv")
+dta_diff <- read.csv("data/output/mainDataset.csv")
+coef_diff <- read.csv("data/output/estimatedCoefficients_ds421_firstDiff.csv")
+smpl_diff <- is.na(dta_diff$growthWDI) == F & is.na(dta_diff$UDel_temp_popweight) == F
+
+# Original Data for comparison
+
+resp <- read.csv("data/output/estimatedGlobalResponse.csv")
+dta <- read.csv("data/output/mainDataset.csv")
+smpl <- is.na(dta$growthWDI)==F & is.na(dta$UDel_temp_popweight)==F   #main estimation sample
+coef <- read.csv("data/output/estimatedCoefficients.csv")
+```
+Edit data
+
+```{r Edit Data}
 # center response at optimum
-x = resp$x
-mx = max(resp$estimate)
-est = resp$estimate - mx
-min90 = resp$min90 - mx
-max90 = resp$max90 - mx
+x = resp_diff$x
+mx = max(resp_diff$estimate)
+est = resp_diff$estimate - mx
+min90 = resp_diff$min90 - mx
+max90 = resp_diff$max90 - mx
 
+# Countries of interest
 ctys = c('USA','CHN','DEU','JPN','IND','NGA','IDN','BRA','FRA','GBR')
 ctt = c('US','CHN',"GER","JPN",'IND','NGA','INDO','BRA','FRA','UK')
+``` 
 
-#initialize plot
-plot(1,xlim=c(-2,30),ylim=c(-0.4,0.1),type="n",las=1,cex.axis=1.3)
+```{r Plot Figure 2A}
+#initialize plot, accounting for a change in levels for y-axis
+plot(1,xlim=c(-2,30),ylim=c(min(min90), max(max90)),type="n",las=1,cex.axis=0.9)
 
 # add vertical average temperature lines for selected countries
 for (j in 1:length(ctys)) {
-  tt = mean(dta$UDel_temp_popweight[dta$iso==ctys[j]],na.rm=T)
+  tt = mean(dta_diff$UDel_temp_popweight[dta_diff$iso==ctys[j]],na.rm=T)
   segments(tt,-0.23,tt,0.15,lwd=0.5)
 }
 
@@ -132,9 +140,9 @@ lines(x,est,lwd=2)
 # now add histograms at bottom
 # first calculate percent of population and global gdp produced at each temperature bin, for our estimation sample
 bins = seq(-7,30,0.5)
-histtemp = dta$UDel_temp_popweight[smpl]
-histpop = dta$Pop[smpl]
-histgdp = dta$TotGDP[smpl]
+histtemp = dta_diff$UDel_temp_popweight[smpl]
+histpop = dta_diff$Pop[smpl]
+histgdp = dta_diff$TotGDP[smpl]
 pop = gdp = c()
 for (j in 1:(length(bins)-1)) {
   lo = bins[j]
