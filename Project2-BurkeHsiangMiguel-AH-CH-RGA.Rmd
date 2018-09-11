@@ -5,7 +5,170 @@ date: "September 10, 2018"
 output: html_document
 ---
 
-## Readme Text
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Write-Up
+
+#### Objective
+
+The objective of our assignment was to recreate Figure 2, Panel A of Burke, Hsiang, and Miguel (2015), looking at the global non-linear (quadratic) relationship between annual average temperature andchange in log gross domestic product (GDP) per capita.  
+
+Instead of plotting the change in log GDP (roughly measuring the change in growth rates of GDP), we wanted to measure the changes in GDP levels.
+
+### Progress & Stumbling Blocks
+
+We were able to recreate the data using the .do files, substituting GDP levels for log-GDP (reflecting growth rate of GDP).  
+
+Three models were built, as described below.  The issues associated with Model 1 are also described, as well as the attempts to address one of those issues with Models 2 and 3.
+
+#### Model 1 (extension "_ds421_levels"):  
+
+Regresses the level of GDP on a quadratic in country temperature, instead of growth in GDP on a quadratic in country temperature. Country-specific quadratic time controls are still used, just as a default, though it is clear that a country quadratic time control in a levels model is not controlling for the same variation in GDP as the same time trend in a growth model.
+
+Now, this model has many problems associated with it that I think make it a bad idea to run. The first is that economic shocks in general affect a percentage of a country's GDP rather than its level of GDP. Think of some shock (e.g. a trade war, or anything): do we think it would cause a loss of e.g. $1,500 per capita whether you live in China, or Brazil, or the EU, or the US? No. Rather, we typically think of a loss of GDP of e.g. 5% as something that could be comparable across these places. (And data on GDP evolution support this intuition.) Two problems then fall out of this issue:
+
+- Problem 1: GDP shocks should enter multiplicatively in the model rather than additively. i.e. the data generating process for country $i$ in time $t$ should be
+
+(a) $GDP_{it} = some shock_{it} \times GDP_{it-1}$
+
+and the data generating process should not be
+
+(b) $GDP_{it} = some_shock_{it} + GDP_{it-1}$
+
+However model (b) is the model that is assumed when doing a levels regression. If you want to assume model (a), which I believe is the correct option, then you have to use the log model that the original authors use.
+
+- Problem 2: Both models (a) and (b) above imply persistence of past shocks into the future. This introduces statistical concerns in the estimation process that also make a simple levels model (Model 1 above) a bad idea to run.
+
+
+#### What do do about all this:
+Both of these issues (Problem 1 and Problem 2) would, I think, be typical justifications for running a growth regression as the original authors did (and as Dell Jones and Olken did as well), and not a simple levels regression. But, we want to test the levels regression, so we are stuck with Problem 1.  For Problem 2, however, we can try first differencing to attempt to cancel out the persistent, past shocks. The next model does this:
+
+- Model 2 (extension "_ds421_firstDiff"):  This model assumes data generating process (b) above, but takes first differences. Effectively:  $GDP_{it} - GDP_{it-1} = some shock_{it} - some shock_{it-1}$.  Importantly (for statistical purposes), GDP_it-1 is no longer on the right hand side of the regression model. We could run a battery of tests to ensure that first differencing fixes the persistent shock problem, but that would be too much work for this assignment.
+One other note for this model: here the time controls are country fixed effect and a linear country time trend. In a first differences model, this is essentially similar to modeling a quadratic country time trend for the level (non-differenced) model. So, I make that change for consistency with Model 1 above.
+
+-- Model 3 (extension "_ds421_firstDiff_quadT"):  This tests the exact same model as Model 2, but includes quadratic country time trends, just to see the sensitivity to trends. Really none of these time controls is similar to having country quadratic time controls for the growth model, so I include Model 3 for the sake of being thorough.
+
+Regarding the country time trends, we would have to do a lot more testing to actually determine what time controls are best given the data, and that is outside the scope of this assignment. Also, it might be futile given Problem 1 anyway.
+
+### Results
+
+Results are included alongside the code below, and in the GitHub file that this Markdown document is associated with.
+
+## Code & Results
+
+### Setup
+
+Download necessary libraries
+
+```{r Environment}
+
+```
+
+Get the data to make Figure 2, using outputs of .do files provided by Andy Hultgren
+
+```{r .Do File Download}
+
+resp <- read.csv("data/output/estimatedGlobalResponse_ds421_firstDiff.csv")
+dta <- read.csv("data/output/mainDataset.csv")
+coef <- read.csv("data/output/estimatedCoefficients_ds421_firstDiff.csv")
+
+```
+
+### Make Figure 2A
+
+```{r Figure 2A}
+
+# SCRIPT TO MAKE FIGURE 2
+# This file calls data created in GenerateFigure2Data.do
+
+rm(list = ls())
+
+require(maptools)
+require(fields)
+require(classInt)
+require(plotrix)
+require(dplyr)
+"%&%"<-function(x,y)paste(x,y,sep="")  #define a function for easy string pasting
+
+pdf(file="figures/MainFigs_Input/Figure2.pdf",width=10,height=5.5,useDingbats=F)
+
+mat <- matrix(c(1,1,2,3,1,1,4,5),nrow=2,byrow=T)
+layout(mat)
+ax = 1.5  #scaling for axes
+par(mar=c(4,4,2,1))
+
+########################################################
+#  Panel A
+########################################################
+
+resp <- read.csv("data/output/estimatedGlobalResponse.csv")
+dta <- read.csv("data/output/mainDataset.csv")
+smpl <- is.na(dta$growthWDI)==F & is.na(dta$UDel_temp_popweight)==F   #main estimation sample
+coef <- read.csv("data/output/estimatedCoefficients.csv")
+
+# center response at optimum
+x = resp$x
+mx = max(resp$estimate)
+est = resp$estimate - mx
+min90 = resp$min90 - mx
+max90 = resp$max90 - mx
+
+ctys = c('USA','CHN','DEU','JPN','IND','NGA','IDN','BRA','FRA','GBR')
+ctt = c('US','CHN',"GER","JPN",'IND','NGA','INDO','BRA','FRA','UK')
+
+#initialize plot
+plot(1,xlim=c(-2,30),ylim=c(-0.4,0.1),type="n",las=1,cex.axis=1.3)
+
+# add vertical average temperature lines for selected countries
+for (j in 1:length(ctys)) {
+  tt = mean(dta$UDel_temp_popweight[dta$iso==ctys[j]],na.rm=T)
+  segments(tt,-0.23,tt,0.15,lwd=0.5)
+}
+
+# plot CI and main effect
+polygon(c(x,rev(x)),c(min90,rev(max90)),col="lightblue",border=NA)
+lines(x,est,lwd=2)
+
+# now add histograms at bottom
+# first calculate percent of population and global gdp produced at each temperature bin, for our estimation sample
+bins = seq(-7,30,0.5)
+histtemp = dta$UDel_temp_popweight[smpl]
+histpop = dta$Pop[smpl]
+histgdp = dta$TotGDP[smpl]
+pop = gdp = c()
+for (j in 1:(length(bins)-1)) {
+  lo = bins[j]
+  hi = bins[j+1]
+  pop = c(pop,sum(histpop[histtemp>=lo & histtemp<hi]))
+  gdp = c(gdp,sum(histgdp[histtemp>=lo & histtemp<hi]))
+}
+pop = pop/sum(pop)
+gdp = gdp/sum(gdp)
+
+#parameters that set where histograms go
+dis = 0.055
+base = -0.3
+
+# now make histograms
+#temperature
+zz <- hist(histtemp,plot=F,breaks=bins)
+cts = zz$counts/max(zz$counts)*0.05  #sets the height of the tallest bar to 0.05
+rect(bins,base,bins+0.5,base+cts,col="red")
+# pop
+cts = pop/max(pop)*0.05
+rect(bins,base-dis*(1),bins+0.5,base-dis*(1)+cts,col="grey")
+# gdp
+cts = gdp/max(gdp)*0.05
+rect(bins,base-dis*(2),bins+0.5,base-dis*(2)+cts,col="black")
+
+
+```
+
+## Supplementary Material
+
+### Readme Text
 
 Readme for replicating Burke, Hsiang, and Miguel 2015
 
@@ -14,7 +177,6 @@ The data and code in the zipped directory BurkeHsiangMiguel2015_Replication.zip 
 Full replication requires both R and Stata.  User-written programs for both R and Stata are required at various points, as highlighted in script headers where relevant.  Code was developed/implemented in Stata/MP 14, and R 3.2.0. 
 
 Users of these data should cite Burke, Hsiang, Miguel 2015.  If you find a consequential error, or alternatively simply wish to congratulate us on a job well done, please email Marshall at mburke@stanford.edu.
-
 
 Info on folders contained in replication data
 —data/input, where input data is stored
@@ -57,35 +219,3 @@ To generate Figure 3 or 4, the user needs to run:
 To generate Figure 5, the user needs to run 3-5 above, and then run:
 7. ComputeDamageFunction.R
 8.  MakeFigure5.R
-
-
-
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## Setup
-
-Get the data to make Figure 2 and make Figure 2
-
-```{r}
-setwd("BurkeHsiangMiguel2015_ds421-minimum-files")
-
-resp <- read.csv("data/output/estimatedGlobalResponse_ds421_firstDiff.csv")
-dta <- read.csv("data/output/mainDataset.csv")
-coef <- read.csv("data/output/estimatedCoefficients_ds421_firstDiff.csv")
-
-install.packages("plotrix")
-
-source("script/MakeFigure2.R")
-
-```
-
-## Including Plots
-
-
-```{r pressure, echo=FALSE}
-
-```
-
